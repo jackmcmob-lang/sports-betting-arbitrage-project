@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sports Betting Arbitrage Finder</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background: #f7f7f8;
+      color: #1a1a1a;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .subtitle { color: #666; margin-top: 0; margin-bottom: 1.5rem; }
+    form { margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: center; }
+    input[type=number] {
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background: #2d6cdf;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #2457b3; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9rem;
+    }
+    th { background: #eef1f6; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    .earnings { color: #1a7f37; font-weight: 600; }
+    .empty, .error {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .error { color: #a3261f; }
+    .meta { color: #666; font-size: 0.85rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Sports Betting Arbitrage Finder</h1>
+  <p class="subtitle">Scans the next upcoming games across US bookmakers for arbitrage opportunities.</p>
+
+  <form method="get">
+    <label for="bet_size">Bet size ($)</label>
+    <input type="number" id="bet_size" name="bet_size" value="{{ bet_size|int }}" min="1" step="1">
+    <button type="submit">Scan now</button>
+  </form>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% elif not events %}
+    <div class="empty">No arbitrage opportunities found right now. Odds change constantly, so try again shortly.</div>
+  {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th>Sport</th>
+          <th>Matchup</th>
+          <th>Expected Profit</th>
+          <th>Bets to Place</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>{{ event.sport_title }}</td>
+          <td>
+            {% if event.home_team and event.away_team %}
+              {{ event.away_team }} @ {{ event.home_team }}
+            {% else %}
+              {{ event.id }}
+            {% endif %}
+          </td>
+          <td class="earnings">${{ "%.2f"|format(event.expected_earnings) }}</td>
+          <td>
+            {% for outcome in event.best_odds %}
+              ${{ event.bet_amounts[loop.index0] }} on {{ outcome[1] }} @ {{ outcome[0] }} (odds {{ outcome[2] }})<br>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="meta">{{ events|length }} opportunity(ies) found, total stake ${{ bet_size|int }} per event.</p>
+  {% endif %}
+</body>
+</html>
